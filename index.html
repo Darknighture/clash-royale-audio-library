@@ -57,9 +57,12 @@ select,.tgl{padding:9px 11px;border:1px solid var(--line);border-radius:10px;bac
 .clear{background:none;border:none;color:var(--ink3);font:inherit;font-size:13px;cursor:pointer;padding:9px 4px}
 .clear:hover{color:var(--red)}
 .grp{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
-.grp .tgl{border:none;border-radius:0;font-size:13px;padding:9px 11px}
+.grp .tgl{border:none;border-radius:0;font-size:13px;padding:9px 11px;white-space:nowrap}
 .grp .tgl + .tgl{border-left:1px solid var(--line)}
 .grp .tgl.on{font-weight:600}
+.grp .tgl i{font-style:normal;font-size:11px;opacity:.55;margin-left:6px;
+  font-variant-numeric:tabular-nums;letter-spacing:0}
+.grp .tgl.on i{opacity:.88}
 main{padding:20px 0 40px}
 .bar{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:6px 0 14px;flex-wrap:wrap}
 .bar .n{font-size:13.5px;color:var(--ink2)}
@@ -272,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <input id="q" type="search" data-i18n-ph="search" placeholder="搜索名称 / 音效名…" autocomplete="off">
     </label>
     <select id="cat"></select>
-    <select id="kind"></select>
+    <div class="grp" id="kind" role="group"></div>
     <select id="rar"></select>
     <select id="sort">
       <option value="idx" data-i18n="sortDefault">默认顺序</option>
@@ -345,24 +348,35 @@ const tagName = t => T('tag_' + t);
 })();
 
 /* ---------------- 筛选器 ---------------- */
+const S = {q:"", cat:"", kind:"", rar:"", sort:"idx"};
 const CATS = window.DATA.cats.slice();
 const RARS = ['common','rare','epic','legendary','champion','evolution','hero','tower'];
 const KINDS = ['bgm','sfx'];
 const catSel = document.getElementById('cat'), rarSel = document.getElementById('rar'),
-      kindSel = document.getElementById('kind');
+      kindBox = document.getElementById('kind');
+
+/* 音频类别：按钮组（全部音频 / 背景音乐 / 其他单位音效），比下拉更直观 */
+function syncKind(){
+  kindBox.querySelectorAll('.tgl').forEach(b => {
+    const on = (b.dataset.k || '') === S.kind;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
 function buildCatOptions(){
-  const c = catSel.value, r = rarSel.value, k = kindSel.value;
+  const c = catSel.value, r = rarSel.value;
   catSel.innerHTML = '<option value="">'+esc(T('catAll'))+'</option>' +
     CATS.map(x=>`<option value="${esc(x.id)}">${esc(T('cat_'+x.id))} (${x.n})</option>`).join('');
-  kindSel.innerHTML = '<option value="">'+esc(T('kindAll'))+'</option>' +
-    KINDS.filter(x=>window.DATA.kindCount[x]).map(x=>`<option value="${x}">${esc(T('kind_'+x))} (${window.DATA.kindCount[x]})</option>`).join('');
+  const kTot = KINDS.reduce((a,x)=>a+(window.DATA.kindCount[x]||0),0);
+  kindBox.innerHTML = `<button class="tgl" type="button" data-k="">${esc(T('kindAll'))}<i>${kTot.toLocaleString()}</i></button>` +
+    KINDS.filter(x=>window.DATA.kindCount[x])
+        .map(x=>`<button class="tgl" type="button" data-k="${x}">${esc(T('kind_'+x))}<i>${window.DATA.kindCount[x].toLocaleString()}</i></button>`).join('');
   rarSel.innerHTML = '<option value="">'+esc(T('rarAll'))+'</option>' +
     RARS.filter(x=>window.DATA.rarCount[x]).map(x=>`<option value="${x}">${esc(T('rar_'+x))} (${window.DATA.rarCount[x]})</option>`).join('');
-  catSel.value = c; rarSel.value = r; kindSel.value = k;
+  catSel.value = c; rarSel.value = r;
+  syncKind();
 }
 buildCatOptions();
-
-const S = {q:"", cat:"", kind:"", rar:"", sort:"idx"};
 /* 当前生效的「音频类别」下，该条目实际要展示的片段 */
 const clipsOf = x => S.kind ? x.clips.filter(c => c.k === S.kind) : x.clips;
 function match(x){
@@ -526,12 +540,19 @@ $('#q').addEventListener('input', ev => {
   timer = setTimeout(() => { S.q = v.trim(); render(); }, 120);
 });
 catSel.onchange = ev => { S.cat = ev.target.value; render(); };
-kindSel.onchange = ev => { S.kind = ev.target.value; render(); };
+kindBox.onclick = ev => {
+  const b = ev.target.closest('.tgl');
+  if(!b) return;
+  S.kind = b.dataset.k || "";
+  syncKind();
+  render();
+};
 rarSel.onchange = ev => { S.rar = ev.target.value; render(); };
 $('#sort').onchange = ev => { S.sort = ev.target.value; render(); };
 $('#reset').onclick = () => {
   S.q=""; S.cat=""; S.kind=""; S.rar=""; S.sort="idx";
-  $('#q').value=""; catSel.value=""; kindSel.value=""; rarSel.value=""; $('#sort').value="idx";
+  $('#q').value=""; catSel.value=""; rarSel.value=""; $('#sort').value="idx";
+  syncKind();
   render();
 };
 

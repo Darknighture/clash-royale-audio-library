@@ -1,2 +1,18 @@
 # 1.4 GB 原始 wav，可由 scripts/extract_fsb.py 从 FSB 音效包重新生成，不入库
 _raw/
+
+# 本地构建 / 验证产生的临时文件
+*.bak
+_t_*.html
+_shot_*.png
+__pycache__/
+
+# 本地构建源码与产物清单 —— 本仓库只发布 index.html + audio/ + icons/
+scripts/
+template.html
+manifest.json
+icon_map.json
+
+# bgm_legacy 中未被页面引用的冗余 mp3（84 个 / 约 43 MB，与 audio/bgm/music_* 内容重复）
+# 注：被页面引用的 16 个已经入库，gitignore 不影响已跟踪文件
+audio/bgm_legacy/
