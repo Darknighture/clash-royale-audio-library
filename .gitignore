@@ -1,0 +1,2 @@
+# 1.4 GB 原始 wav，可由 scripts/extract_fsb.py 从 FSB 音效包重新生成，不入库
+_raw/
