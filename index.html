@@ -173,9 +173,8 @@ window.I18N = {
   "hint":{"zh":"↓ 向下滚动浏览 · 点卡片查看该单位全部音效 · 底部播放器可循环单曲","en":"↓ Scroll to browse · click a card to see all its clips · loop a single track in the bottom player"},
   "search":{"zh":"搜索名称 / 音效名…","en":"Search name / clip name…"},
   "catAll":{"zh":"全部分类","en":"All categories"},
-  "kindAll":{"zh":"全部音频","en":"All audio"},
-  "kind_bgm":{"zh":"背景音乐","en":"Background music"},
-  "kind_sfx":{"zh":"其他单位音效","en":"Other unit SFX"},
+  "kind_bgm":{"zh":"背景音乐","en":"BGM"},
+  "kind_sfx":{"zh":"单位音效","en":"SFX"},
   "rarAll":{"zh":"全部稀有度","en":"All rarities"},
   "sortDefault":{"zh":"默认顺序","en":"Default order"},
   "sortName":{"zh":"名称 A → Z","en":"Name A → Z"},
@@ -355,10 +354,11 @@ const KINDS = ['bgm','sfx'];
 const catSel = document.getElementById('cat'), rarSel = document.getElementById('rar'),
       kindBox = document.getElementById('kind');
 
-/* 音频类别：按钮组（全部音频 / 背景音乐 / 其他单位音效），比下拉更直观 */
+/* 音频类别：按钮组（背景音乐 / 单位音效），比下拉更直观。
+   没有「全部」按钮 —— 再点一次已选中的按钮即取消，回到不过滤。 */
 function syncKind(){
   kindBox.querySelectorAll('.tgl').forEach(b => {
-    const on = (b.dataset.k || '') === S.kind;
+    const on = b.dataset.k === S.kind;
     b.classList.toggle('on', on);
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
@@ -367,10 +367,8 @@ function buildCatOptions(){
   const c = catSel.value, r = rarSel.value;
   catSel.innerHTML = '<option value="">'+esc(T('catAll'))+'</option>' +
     CATS.map(x=>`<option value="${esc(x.id)}">${esc(T('cat_'+x.id))} (${x.n})</option>`).join('');
-  const kTot = KINDS.reduce((a,x)=>a+(window.DATA.kindCount[x]||0),0);
-  kindBox.innerHTML = `<button class="tgl" type="button" data-k="">${esc(T('kindAll'))}<i>${kTot.toLocaleString()}</i></button>` +
-    KINDS.filter(x=>window.DATA.kindCount[x])
-        .map(x=>`<button class="tgl" type="button" data-k="${x}">${esc(T('kind_'+x))}<i>${window.DATA.kindCount[x].toLocaleString()}</i></button>`).join('');
+  kindBox.innerHTML = KINDS.filter(x=>window.DATA.kindCount[x])
+    .map(x=>`<button class="tgl" type="button" data-k="${x}">${esc(T('kind_'+x))}<i>${window.DATA.kindCount[x].toLocaleString()}</i></button>`).join('');
   rarSel.innerHTML = '<option value="">'+esc(T('rarAll'))+'</option>' +
     RARS.filter(x=>window.DATA.rarCount[x]).map(x=>`<option value="${x}">${esc(T('rar_'+x))} (${window.DATA.rarCount[x]})</option>`).join('');
   catSel.value = c; rarSel.value = r;
@@ -543,7 +541,8 @@ catSel.onchange = ev => { S.cat = ev.target.value; render(); };
 kindBox.onclick = ev => {
   const b = ev.target.closest('.tgl');
   if(!b) return;
-  S.kind = b.dataset.k || "";
+  const k = b.dataset.k;            // 再点一次已选中的按钮 → 取消筛选
+  S.kind = (S.kind === k) ? "" : k;
   syncKind();
   render();
 };
