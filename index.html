@@ -98,6 +98,18 @@ main{padding:20px 0 40px}
 .yr{font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
 .empty{padding:60px 0;text-align:center;color:var(--ink3)}
 
+/* ---------- footer · 免责声明 ---------- */
+.foot{margin:28px 0 6px;padding-top:20px;border-top:1px solid var(--line)}
+.foot .box{background:var(--acc-soft);border:1px solid var(--acc-line);border-radius:var(--radius);
+  padding:15px 17px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.foot h2{margin:0 0 9px;font-size:12.5px;font-weight:700;color:var(--acc-in);
+  letter-spacing:.02em;display:flex;align-items:center;gap:7px}
+.foot h2:before{content:"";width:3px;height:13px;border-radius:2px;background:var(--acc);flex:none}
+.foot p{margin:0 0 8px}
+.foot p:last-child{margin-bottom:0}
+.foot a{color:var(--acc2);text-decoration:underline;text-underline-offset:2px}
+.foot a:hover{color:var(--acc)}
+
 /* ---------- lightbox ---------- */
 .lb{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:22px}
 .lb.open{display:flex}
@@ -220,6 +232,9 @@ window.I18N = {
   "tag_循环":{"zh":"循环","en":"Loop"},
   "tag_音乐":{"zh":"音乐","en":"Music"},
   "tag_其他":{"zh":"其他","en":"Other"},
+  "discTitle":{"zh":"免责声明","en":"Disclaimer"},
+  "disc":{"zh":"本内容为<b>非官方粉丝作品</b>，与 Supercell 无任何关联，亦未获其授权或认可。所有图像、动画、音频的版权归 <b>Supercell</b> 所有，仅用于学习与展示，不作商业用途。详见 <a href='https://www.supercell.com/fan-content-policy' target='_blank' rel='noopener noreferrer'>Supercell 粉丝内容政策</a>。",
+          "en":"This content is an <b>unofficial fan project</b> — not affiliated with, authorized, or endorsed by Supercell. All images, animations and sounds are copyright <b>Supercell</b>; used for study and display only, with no commercial use. See <a href='https://www.supercell.com/fan-content-policy' target='_blank' rel='noopener noreferrer'>Supercell's Fan Content Policy</a>."},
 };
 window.LANG = (function(){ try{ return localStorage.getItem('cr-audio-lang')==='en'?'en':'zh'; }catch(e){ return 'zh'; } })();
 window.T = function(k){
@@ -241,6 +256,14 @@ function applyI18n(){
   if(e2) e2.classList.toggle('on', window.LANG === 'en');
   if(typeof buildCatOptions === 'function') buildCatOptions();
   if(typeof render === 'function') render();
+  if(typeof padForPlayer === 'function') padForPlayer();   // 播放器文案变长可能换行
+  // 播放器这两行没有 data-i18n（播放中要显示片段名，不能被模板覆盖），单独同步
+  const ptEl = document.getElementById('p-title'), psEl = document.getElementById('p-sub');
+  if(ptEl && psEl){
+    const curIt = playingFile ? ITEMS.find(x => x.clips.some(c => c.f === playingFile)) : null;
+    if(curIt) psEl.textContent = nameOf(curIt) + ' · ' + catName(curIt);
+    else { ptEl.textContent = T('notPlaying'); psEl.textContent = T('notPlayingSub'); }
+  }
 }
 function setLang(l){
   window.LANG = l;
@@ -294,6 +317,13 @@ document.addEventListener('DOMContentLoaded', function(){
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" data-i18n="empty" style="display:none"></div>
 </main>
+
+<footer class="foot wrap">
+  <div class="box">
+    <h2 data-i18n="discTitle">免责声明</h2>
+    <p data-i18n-html="disc">本内容为<b>非官方粉丝作品</b>，与 Supercell 无任何关联，亦未获其授权或认可。所有图像、动画、音频的版权归 <b>Supercell</b> 所有，仅用于学习与展示，不作商业用途。详见 <a href='https://www.supercell.com/fan-content-policy' target='_blank' rel='noopener noreferrer'>Supercell 粉丝内容政策</a>。</p>
+  </div>
+</footer>
 
 
 <div class="lb" id="lb">
@@ -555,9 +585,17 @@ $('#reset').onclick = () => {
   render();
 };
 
+/* 固定播放器在窄屏会换行变高，按实测高度给 body 留白，否则页脚底部会被压住 */
+function padForPlayer(){
+  const p = document.querySelector('.player');
+  if(p) document.body.style.paddingBottom = (p.offsetHeight + 16) + 'px';
+}
+window.addEventListener('resize', padForPlayer);
+
 $('#p-title').textContent = T('notPlaying');
 $('#p-sub').textContent = T('notPlayingSub');
 render();
+padForPlayer();
 </script>
 </body>
 </html>
